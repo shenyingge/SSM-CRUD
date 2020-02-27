@@ -11,6 +11,9 @@
     </typeAliases>
     <!-- 需要放在typeAliases后面 -->
     <plugins>
-        <plugin interceptor="com.github.pagehelper.PageInterceptor"></plugin>
+        <plugin interceptor="com.github.pagehelper.PageInterceptor">
+            <!-- 分页参数合理化 -->
+            <property name="resonable" value="true"/>
+        </plugin>
     </plugins>
 </configuration>

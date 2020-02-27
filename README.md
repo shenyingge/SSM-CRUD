@@ -1,4 +1,4 @@
-# SSM整合记录
+# 	SSM整合记录
 
 ## 1. 环境搭建
 
@@ -16,6 +16,12 @@
  * 其他（jstl，servlet，junit）
 
    ```xml
+     <!-- 导入jackson包 -->
+     <dependency>
+         <groupId>com.fasterxml.jackson.core</groupId>
+         <artifactId>jackson-databind</artifactId>
+         <version>2.8.8</version>
+     </dependency>
      <dependencies>
        <!-- SpringMVC, Spring -->
        <dependency>
@@ -719,4 +725,469 @@
 
 * 测试CRUD请求
 
-* 
+    Spring4测试的时候，需要servlet3.0的支持，更换servlet-api坐标和版本
+
+    ```xml
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>3.0.1</version>
+      <scope>provided</scope>
+    </dependency>
+    ```
+
+* 书写list.jsp页面
+
+  引入jsp对应api
+
+  ```xml
+  <!-- 引入jsp对应api -->
+  <dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>jsp-api</artifactId>
+    <version>2.0</version>
+    <scope>provided</scope>
+  </dependency>
+  ```
+
+  在jsp中使用el表达式必须设置
+
+  <u>**isELIgnored="false"**</u>
+
+  ```jsp
+  <%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="false"%>
+  ```
+
+* 完成页面编写
+
+    ```jsp
+    <%--
+      Created by IntelliJ IDEA.
+      User: shen
+      Date: 2020/2/26
+      Time: 19:50
+      To change this template use File | Settings | File Templates.
+    --%>
+    <%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="false"%>
+    <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+    
+    <html>
+    <head>
+        <title>员工列表</title>
+    <%
+        pageContext.setAttribute("APP_PATH",request.getContextPath());
+    %>
+        <!-- web路径：
+         不以/开始的相对路径，找资源，以当前资源的路径为基准，经常出问题
+         以/开始的相对路径，找资源，以服务器的路径为标准（http://localhost:3306），需要加上项目名
+         http://localhost:3306/ssm-crud
+         -->
+        <!-- 引入Jquery -->
+        <script type="text/javascript" src="${APP_PATH}/static/js/jquery-3.3.1.min.js"></script>
+    
+        <link href="${APP_PATH}/static/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+    
+        <script src="${APP_PATH}/static/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <!-- 引入Bootstrap样式 -->
+    
+    
+        <!-- 搭建显示页面 -->
+        <div class="container">
+            <!-- 标题 -->
+            <div class="row">
+                <div class="col-md-12">
+                    <h1>SSM-CRUD</h1>
+                </div>
+            </div>
+            <!-- 按钮 -->
+            <div class="row">
+                <div class="col-md-4 col-md-offset-9">
+                    <button class="btn btn-primary">新增</button>
+                    <button class="btn btn-danger">删除</button>
+                </div>
+            </div>
+            <!-- 表格 -->
+            <div class="row">
+                <div class="col-md-12">
+                    <table class="table table-hover">
+                        <tr>
+                            <th>#</th>
+                            <th>empName</th>
+                            <th>gender</th>
+                            <th>email</th>
+                            <th>deptName</th>
+                            <th>操作</th>
+                        </tr>
+                        <c:forEach items="${pageInfo.list}" var="emp">
+                            <tr>
+                                <th>${emp.empId}</th>
+                                <th>${emp.empName}</th>
+                                <th>${emp.gender=="M"?"男":"女"}</th>
+                                <th>${emp.email}</th>
+                                <th>${emp.department.deptName}</th>
+                                <th>
+                                    <button class="btn btn-primary btn-sm">
+                                        <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                                        编辑
+                                    </button>
+                                    <button class="btn btn-danger btn-sm">
+                                        <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                                        删除
+                                    </button>
+                                </th>
+                            </tr>
+                        </c:forEach>
+                    </table>
+                </div>
+            </div>
+            <!-- 分页信息 -->
+            <div class="row">
+                <!-- 文字分页信息  -->
+                <div class="col-md-6">
+                    当前${pageInfo.pageNum}页，共${pageInfo.pages}页，共${pageInfo.total}条记录
+                </div>
+                <!-- 分页条信息 -->
+                <div class="col-lg-6">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            <li> <a href="${APP_PATH}/emps?pn=1">首页</a>></li>
+                            <c:if test="${pageInfo.hasPreviousPage}">
+                                <li>
+                                    <a href="${APP_PATH}/emps?pn=${pageInfo.pageNum-1}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            </c:if>
+                            <c:forEach items="${pageInfo.navigatepageNums}" var="page_Num">
+                                <c:if test="${page_Num == pageInfo.pageNum}">
+                                    <li class="active"><a href="#">${page_Num}</a></li>
+                                </c:if>
+                                <c:if test="${page_Num != pageInfo.pageNum}">
+                                    <li><a href="${APP_PATH}/emps?pn=${page_Num}">${page_Num}</a></li>
+                                </c:if>
+                            </c:forEach>
+    
+    
+                            <c:if test="${pageInfo.hasNextPage}">
+                                <li>
+                                    <a href="${APP_PATH}/emps?pn=${pageInfo.pageNum+1}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </c:if>
+                            <li><a href="${APP_PATH}/emps?pn=${pageInfo.pages}">末页</a>></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    ```
+
+* 为提高兼容性，使用ajax进行请求json
+
+    1. index.jsp页面直接发送ajax请求进行员工分页数据的查询
+    2. 服务器将查出的数据，以json字符串的形式返回给浏览器
+    3. 浏览器收到js字符串，可以使用js对json进行解析，使用js通过dom增删改查改变页面
+    4. 返回json，实现客户端兼容显示
+
+    导入jackson包
+
+    ```xml
+    <!-- 导入jackson包 -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.8.8</version>
+    </dependency>
+    ```
+
+* 新增一个Msg类来统一返回json
+
+    ```java
+    package cn.sai.crud.bean;
+    
+    import java.util.HashMap;
+    import java.util.Map;
+    
+    //通用的返回的类
+    public class Msg {
+        //状态码 成功=100 失败=200
+        private int code;
+        //提示信息
+        private String msg;
+    
+        //用户要返回给浏览器的数据
+        private Map<String, Object> extend = new HashMap<String, Object>();
+    
+        public Msg add(String key, Object value){
+            this.getExtend().put(key, value);
+            return this;
+        }
+    
+        public static Msg success(){
+            Msg result = new Msg();
+            result.setCode(100);
+            result.setMsg("成功");
+            return result;
+        }
+    
+        public static Msg failure(){
+            Msg result = new Msg();
+            result.setCode(200);
+            result.setMsg("失败");
+            return result;
+        }
+    
+        public int getCode() {
+            return code;
+        }
+    
+        public void setCode(int code) {
+            this.code = code;
+        }
+    
+        public String getMsg() {
+            return msg;
+        }
+    
+        public void setMsg(String msg) {
+            this.msg = msg;
+        }
+    
+        public Map<String, Object> getExtend() {
+            return extend;
+        }
+    
+        public void setExtend(Map<String, Object> extend) {
+            this.extend = extend;
+        }
+    }
+    ```
+
+* 重写一个Controller的方法
+
+    ```java
+    //SpringMVC的ResponseBody可以直接把对象转为json，需要jackson包
+    @ResponseBody
+    @RequestMapping("/emps")
+    public Msg getEmpsWithJson(@RequestParam(value = "pn",defaultValue = "1")Integer pn){
+        PageHelper.startPage(pn,5);
+        List<Employee> emps = employeeService.getAll();
+        PageInfo page = new PageInfo(emps,5);  //navigatePages：显示的页数
+        return Msg.success().add("pageInfo",page);
+    }
+    ```
+
+* index.jsp查询功能部分
+
+  ```jsp
+  <%--
+    Created by IntelliJ IDEA.
+    User: shen
+    Date: 2020/2/26
+    Time: 19:50
+    To change this template use File | Settings | File Templates.
+  --%>
+  <%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="false"%>
+  <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+  
+  <html>
+  <head>
+      <title>员工列表</title>
+      <%
+          pageContext.setAttribute("APP_PATH",request.getContextPath());
+      %>
+      <!-- web路径：
+       不以/开始的相对路径，找资源，以当前资源的路径为基准，经常出问题
+       以/开始的相对路径，找资源，以服务器的路径为标准（http://localhost:3306），需要加上项目名
+       http://localhost:3306/ssm-crud
+       -->
+      <!-- 引入Jquery -->
+      <script type="text/javascript" src="${APP_PATH}/static/js/jquery-3.3.1.min.js"></script>
+  
+      <!-- 引入Bootstrap样式 -->
+      <link href="${APP_PATH}/static/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+      <script src="${APP_PATH}/static/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+  
+  </head>
+  <body>
+      <!-- 搭建显示页面 -->
+      <div class="container">
+          <!-- 标题 -->
+          <div class="row">
+              <div class="col-md-12">
+                  <h1>SSM-CRUD</h1>
+              </div>
+          </div>
+          <!-- 按钮 -->
+          <div class="row">
+              <div class="col-md-4 col-md-offset-8">
+                  <button class="btn btn-primary">新增</button>
+                  <button class="btn btn-danger">删除</button>
+              </div>
+          </div>
+          <!-- 表格 -->
+          <div class="row">
+              <div class="col-md-12">
+                  <table id="emps_table" class="table table-hover">
+                      <thead>
+                          <tr>
+                              <th>#</th>
+                              <th>empName</th>
+                              <th>gender</th>
+                              <th>email</th>
+                              <th>deptName</th>
+                              <th>操作</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+  
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+          <!-- 分页信息 -->
+          <div class="row">
+              <!-- 文字分页信息  -->
+              <div id="page_info_area" class="col-md-6">
+  
+              </div>
+              <!-- 分页条信息 -->
+              <div id="page_nav_area" class="col-lg-6">
+  
+              </div>
+          </div>
+      </div>
+      <script type="text/javascript">
+          //1、页面加载完成之后，直接去发送ajax请求，要到分页数据
+          $(function(){
+              to_page(1);
+          });
+  
+          //点击页码跳转
+          function to_page(pn) {
+              $.ajax({
+                  url:"${APP_PATH}/emps",
+                  data:"pn="+pn,
+                  type:"GET",
+                  success:function (result) {
+                      //console.log(result);
+                      //1、解析并显示员工数据
+                      build_emps_table(result);
+                      //2、解析并显示分页数据
+                      build_page_info(result);
+                      //3、解析并显示分页条
+                      build_page_nav(result);
+                  }
+              });
+          }
+  
+          //显示表格数据
+          function build_emps_table(result) {
+  
+              //清空表格
+              $("#emps_table tbody").empty();
+  
+              var emps = result.extend.pageInfo.list;
+              $.each(emps,function (index,item) {
+                  var empIdTd = $("<td></td>").append(item.empId);
+                  var empNameTd = $("<td></td>").append(item.empName);
+                  var genderTd = $("<td></td>").append(item.gender=='M'?"男":"女");
+                  var empEmailTd = $("<td></td>").append(item.email);
+                  var deptNameTd = $("<td></td>").append(item.department.deptName);
+                  /*<button class="btn btn-primary btn-sm">
+                       <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                       编辑
+                    </button>
+                    <button class="btn btn-danger btn-sm">
+                       <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+                       删除
+                    </button>
+                  * */
+                  var editBtn = $("<button></button>")
+                      .addClass("btn btn-primary btn-sm")
+                      .append($("<span></span>").addClass("glyphicon glyphicon-pencil")).append("编辑");
+                  var delBtn = $("<button></button>")
+                      .addClass("btn btn-danger btn-sm")
+                      .append($("<span></span>").addClass("glyphicon glyphicon-trash")).append("删除");
+  
+                  var btnTd = $("<td></td>").append(editBtn).append(" ").append(delBtn);
+  
+                  $("<tr></tr>").append(empIdTd)
+                      .append(empNameTd)
+                      .append(genderTd)
+                      .append(empEmailTd)
+                      .append(deptNameTd)
+                      .append(btnTd)
+                      .appendTo("#emps_table tbody");
+              });
+          }
+  
+          //显示分页信息
+          function build_page_info(result) {
+              $("#page_info_area").empty();
+              $("#page_info_area").append("当前"+result.extend.pageInfo.pageNum+"页，共"+result.extend.pageInfo.pages+"页，共"+result.extend.pageInfo.total+"条记录");
+          }
+          //显示分页条，添加点击事件
+          function build_page_nav(result) {
+              $("#page_nav_area").empty();
+              var ul = $("<ul></ul>").addClass("pagination");
+              var firstPageLi = $("<li></li>").append($("<a></a>").append("首页")).attr("href","#");
+              var prePageLi = $("<li></li>").append($("<a></a>").append("&laquo;"));
+              if(result.extend.pageInfo.pageNum == 1){
+                  firstPageLi.addClass("disabled");
+                  prePageLi.addClass("disabled");
+              }else {
+                  firstPageLi.click(function () {
+                      to_page(1);
+                  });
+                  prePageLi.click(function () {
+                      to_page(result.extend.pageInfo.pageNum-1);
+                  });
+              }
+              var nextPageLi = $("<li></li>").append($("<a></a>").append("&raquo;"));
+              var lastPageLi = $("<li></li>").append($("<a></a>").append("末页")).attr("href","#");
+              if(result.extend.pageInfo.pageNum == result.extend.pageInfo.pages){
+                  nextPageLi.addClass("disabled");
+                  lastPageLi.addClass("disabled");
+              }else{
+                  nextPageLi.click(function () {
+                      to_page(result.extend.pageInfo.pageNum+1);
+                  });
+                  lastPageLi.click(function () {
+                      to_page(result.extend.pageInfo.pages);
+                  });
+              }
+  
+              ul.append(firstPageLi).append(prePageLi);
+              $.each(result.extend.pageInfo.navigatepageNums,function (index,item) {
+                  var numLi = $("<li></li>").append($("<a></a>").append(item));
+                  if(result.extend.pageInfo.pageNum == item){
+                      numLi.addClass("active");
+                  }
+                  numLi.click(function () {
+                      to_page(item);
+                  });
+                  ul.append(numLi);
+              });
+              ul.append(nextPageLi).append(lastPageLi);
+              var navEle = $("<nav></nav>").append(ul);
+              //$("#page_nav_area").append(navEle);
+              navEle.appendTo("#page_nav_area");
+          }
+      </script>
+  </body>
+  </html>
+  ```
+
+### 2.2 新增功能
+
+* 业务逻辑
+  1. 在index.jsp页面点击“新增”
+  2. 弹出新增对话框
+  3. 去数据库查询部门列表，显示在对话框中
+  4. 用户输入数据完成保存
