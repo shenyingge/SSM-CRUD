@@ -21,6 +21,14 @@
 
   <dependencies>
 
+    <!-- JSR303数据校验支持 tomcat7及以上直接使用，
+    以下的服务器需要给服务器的lib包中替换新的el -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>5.4.1.Final</version>
+    </dependency>
+
     <!-- 导入jackson包 -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

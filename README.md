@@ -1190,4 +1190,108 @@
   1. 在index.jsp页面点击“新增”
   2. 弹出新增对话框
   3. 去数据库查询部门列表，显示在对话框中
-  4. 用户输入数据完成保存
+  4. 用户输入数据，并进行校验
+     * jQuery前端校验，ajax用户名重复校验，重要数据后端校验，唯一约束（JSR303）
+
+  URI：
+
+  /emp/{id}	GET		查询员工
+
+  /emp			POST 	保存员工
+
+  /emp/{id}	PUT		修改员工
+
+  /emp/{id}	DELETE  删除员工
+
+* 要使用spring自动封装提交数据，必须保持jsp页面中的元素name与java bean中的name一致
+
+* 要查询部门信息，跟之前类似的方法创建Contorller，Service类进行操作
+
+* 在Service类中需要查询的时候，可以用Example类增加查询条件
+
+  例如：
+
+  ```java
+  public boolean checkUser(String EmpName) {
+      EmployeeExample example = new EmployeeExample();
+      //创建查询条件
+      EmployeeExample.Criteria criteria = example.createCriteria();
+      criteria.andEmpNameEqualTo(EmpName);
+      employeeMapper.selectByExample(example);
+      long count = employeeMapper.countByExample(example);
+      return count == 0;
+  }
+  ```
+
+* 要使用JSR303校验，导入Hibernate-Validator
+
+  ```xml
+  <!-- JSR303数据校验支持 tomcat7及以上直接使用，
+  以下的服务器需要给服务器的lib包中替换新的el -->
+  <dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-validator</artifactId>
+    <version>5.4.1.Final</version>
+  </dependency>
+  ```
+
+* 在java bean中加入注解进行正则校验
+
+  ```java
+  @Pattern(regexp = "(^[a-zA-Z0-9_-]{6,16}$)|(^[\\u2E80-\\u9FFF]{2,5}$)"
+          ,message = "用户名必须是2-5位中文或者6-16位英文和数字的组合")
+  private String empName;
+  
+  @Email(message = "邮箱格式不正确")
+  private String email;
+  ```
+
+* Controller中进行校验
+
+  ```java
+  //检查用户名是否重复
+  @ResponseBody
+  @RequestMapping("/checkuser")
+  public Msg checkUser(@RequestParam("EmpName") String EmpName){
+      //先判断用户名是否合法
+      String regx = "(^[a-zA-Z0-9_-]{6,16}$)|(^[\u2E80-\u9FFF]{2,5}$)";
+      if(!EmpName.matches(regx)){
+          return Msg.failure().add("va_msg","用户名非法");
+      }
+  
+      //数据库校验
+      boolean b = employeeService.checkUser(EmpName);
+      if(b){
+          return Msg.success();
+      }else{
+          return Msg.failure().add("va_msg","用户名已注册");
+      }
+  }
+  
+  //员工保存
+  @RequestMapping(value = "/emp",method = RequestMethod.POST)
+  @ResponseBody
+  public Msg saveEmp(@Valid Employee employee, BindingResult result){
+      if(result.hasErrors()){
+          //校验失败，返回失败，显示错误信息
+          Map<String,Object> map = new HashMap<>();
+          List<FieldError> errors = result.getFieldErrors();
+          for (FieldError error : errors) {
+              System.out.println("错误字段名："+error.getField());
+              System.out.println("错误信息：+error.getDefaultMessage()");
+              map.put(error.getField(),error.getDefaultMessage());
+          }
+          return Msg.failure().add("errorfields", map);
+      }else{
+          employeeService.saveEmp(employee);
+          return Msg.success();
+      }
+  }
+  ```
+
+### 2.3 修改功能
+
+* 业务逻辑
+  1. 点击编辑
+  2. 弹出用户修改的模态框（显示用户信息）
+  3. 点击更新，完成用户修改

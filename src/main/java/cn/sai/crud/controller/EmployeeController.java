@@ -8,25 +8,62 @@ import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.validation.Valid;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 //处理员工CRUD
 @Controller
 public class EmployeeController {
+
     @Autowired
     EmployeeService employeeService;
+
+    //检查用户名是否重复
+    @ResponseBody
+    @RequestMapping("/checkuser")
+    public Msg checkUser(@RequestParam("EmpName") String EmpName){
+        //先判断用户名是否合法
+        String regx = "(^[a-zA-Z0-9_-]{6,16}$)|(^[\u2E80-\u9FFF]{2,5}$)";
+        if(!EmpName.matches(regx)){
+            return Msg.failure().add("va_msg","用户名非法");
+        }
+
+        //数据库校验
+        boolean b = employeeService.checkUser(EmpName);
+        if(b){
+            return Msg.success();
+        }else{
+            return Msg.failure().add("va_msg","用户名已注册");
+        }
+    }
 
     //员工保存
     @RequestMapping(value = "/emp",method = RequestMethod.POST)
     @ResponseBody
-    public Msg saveEmp(Employee employee){
-        employeeService.saveEmp(employee);
-        return Msg.success();
+    public Msg saveEmp(@Valid Employee employee, BindingResult result){
+        if(result.hasErrors()){
+            //校验失败，返回失败，显示错误信息
+            Map<String,Object> map = new HashMap<>();
+            List<FieldError> errors = result.getFieldErrors();
+            for (FieldError error : errors) {
+                System.out.println("错误字段名："+error.getField());
+                System.out.println("错误信息：+error.getDefaultMessage()");
+                map.put(error.getField(),error.getDefaultMessage());
+            }
+            return Msg.failure().add("errorfields", map);
+        }else{
+            employeeService.saveEmp(employee);
+            return Msg.success();
+        }
     }
 
     //SpringMVC的ResponseBody可以直接把对象转为json，需要jackson包
