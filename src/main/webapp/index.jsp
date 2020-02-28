@@ -28,6 +28,62 @@
 
 </head>
 <body>
+
+    <!-- 员工添加的模态框 -->
+    <div class="modal fade" id="empAddModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">员工添加</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal" id="emp_save_form">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">empName</label>
+                            <div class="col-sm-10">
+                                <input type="text" name="empName" class="form-control" id="empName_add_input" placeholder="empName">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">email</label>
+                            <div class="col-sm-10">
+                                <input type="text" name="email" class="form-control" id="email_add_input" placeholder="email@gmail.com">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email_add_input" class="col-sm-2 control-label">gender</label>
+                            <div class="col-sm-10">
+                                <label class="radio-inline">
+                                    <input type="radio" name="gender" id="gender1_add_input" value="M"> 男
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" name="gender" id="gender2_add_input" value="F"> 女
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email_add_input" class="col-sm-2 control-label">deptName</label>
+                            <div class="col-sm-4">
+                                <!-- 部门提交只需要部门id -->
+                                <select class="form-control" id="dept_add_select" name="dId">
+
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="emp_save_btn">保存</button>
+                    <button type="button" class="btn btn-default" id="emp_save_close" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
     <!-- 搭建显示页面 -->
     <div class="container">
         <!-- 标题 -->
@@ -39,7 +95,7 @@
         <!-- 按钮 -->
         <div class="row">
             <div class="col-md-4 col-md-offset-8">
-                <button class="btn btn-primary">新增</button>
+                <button class="btn btn-primary" id="emp_add_modal_btn">新增</button>
                 <button class="btn btn-danger">删除</button>
             </div>
         </div>
@@ -76,6 +132,9 @@
         </div>
     </div>
     <script type="text/javascript">
+
+        var totalRecord;
+
         //1、页面加载完成之后，直接去发送ajax请求，要到分页数据
         $(function(){
             to_page(1);
@@ -142,9 +201,11 @@
 
         //显示分页信息
         function build_page_info(result) {
+            totalRecord = result.extend.pageInfo.total;
             $("#page_info_area").empty();
             $("#page_info_area").append("当前"+result.extend.pageInfo.pageNum+"页，共"+result.extend.pageInfo.pages+"页，共"+result.extend.pageInfo.total+"条记录");
         }
+
         //显示分页条，添加点击事件
         function build_page_nav(result) {
             $("#page_nav_area").empty();
@@ -192,6 +253,54 @@
             //$("#page_nav_area").append(navEle);
             navEle.appendTo("#page_nav_area");
         }
+
+        //点击新增按钮弹出模态框
+        $("#emp_add_modal_btn").click(function () {
+            //发出ajax请求，查出部门信息，显示
+            getDepts();
+            //弹出模态框
+            $("#empAddModal").modal({
+                backdrop:false
+            });
+        });
+
+        //查出部门信息
+        function getDepts() {
+            $.ajax({
+                url:"${APP_PATH}/depts",
+                type:"GET",
+                success:function (result) {
+//                    console.log(result);
+                    $("#dept_add_select").empty();
+                    var depts = result.extend.depts;
+                    $.each(depts,function (index,item) {
+                        var depOption = $("<option></option>").append(item.deptName).attr("value",item.deptId);
+                        depOption.appendTo("#dept_add_select");
+                    });
+                }
+            });
+        }
+        $("#emp_save_btn").click(function () {
+            //1、模态框中填写的表单数据提交给服务器进行保存
+            //2、发送ajax请求保存员工
+            $.ajax({
+                url:"${APP_PATH}/emp",
+                type: "POST",
+                data: $("#emp_save_form").serialize(),
+                success:function (result) {
+                    //alert(result.msg);
+                    /*保存成功后
+                    * 1、关闭模态框
+                    * 2、跳转最后一页
+                    * 发送请求，请求最后一页
+                    * */
+                    $("#empAddModal").modal('hide');
+                    to_page(totalRecord);
+                }
+            });
+        });
+
+
     </script>
 </body>
 </html>
