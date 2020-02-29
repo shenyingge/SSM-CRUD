@@ -10,12 +10,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +24,66 @@ public class EmployeeController {
 
     @Autowired
     EmployeeService employeeService;
+
+    //多个删除
+    @ResponseBody
+    @RequestMapping(value = "/emp/{ids}",method = RequestMethod.DELETE)
+    public Msg deleteEmp(@PathVariable("ids") String ids){
+        //批量删除
+        if(ids.contains("-")){
+            String[] str_ids = ids.split("-");
+            List<Integer> list = new ArrayList<>();
+            for(String id : str_ids){
+                list.add(Integer.parseInt(id));
+            }
+            employeeService.deleteBatch(list);
+        }else{
+            //单个删除
+            employeeService.deleteEmp(Integer.parseInt(ids));
+        }
+        return Msg.success();
+    }
+
+    /*
+    * 问题：
+    * 如果直接发送ajax=PUT请求
+    * 请求体中有数据但是Employee封装不上
+    * 除了id之外的数据为null
+    * update tbl_emp where emp_id = 1014
+    * 原因：
+    * Tomcat的问题
+    * Tomcat不把PUT请求请求体中的数据封装成map，只有POST才封装map
+    * 解决：
+    * 要直接发送PUT
+    * 在xml配置HttpPutFormContentFilter
+    * 将请求体的数据解析包装成一个map
+    * */
+    @RequestMapping(value = "/emp/{empId}",method = RequestMethod.PUT)
+    @ResponseBody
+    public Msg updateEmp(Employee employee, BindingResult result){
+        if(result.hasErrors()){
+            //校验失败，返回失败，显示错误信息
+            Map<String,Object> map = new HashMap<>();
+            List<FieldError> errors = result.getFieldErrors();
+            for (FieldError error : errors) {
+                System.out.println("错误字段名："+error.getField());
+                System.out.println("错误信息：+error.getDefaultMessage()");
+                map.put(error.getField(),error.getDefaultMessage());
+            }
+            return Msg.failure().add("errorfields", map);
+        }else{
+            employeeService.updateEmp(employee);
+            return Msg.success();
+        }
+    }
+
+    @RequestMapping(value = "/emp/{id}",method = RequestMethod.GET)
+    @ResponseBody
+    public Msg getEmp(@PathVariable("id") Integer id){
+
+        Employee employee = employeeService.getEmp(id);
+        return Msg.success().add("emp",employee);
+    }
 
     //检查用户名是否重复
     @ResponseBody
